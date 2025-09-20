@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Profile from './pages/Profile.jsx';
 import Jobs from './pages/Jobs.jsx'; // STEP 1: Naye Jobs page ko import karein
 import ProtectedRoute from './components/ui/ProtectedRoute.jsx';
+import SavedJobs from './pages/SavedJobs.jsx'
 
 const App = () => {
   return (
@@ -44,6 +45,7 @@ const App = () => {
             
             {/* STEP 2: Naya /jobs route yahan add karein */}
             <Route path='/jobs' element={<Jobs />} />
+            <Route path='/saved-jobs' element={<SavedJobs />} />
             
             {/* Future mein AI Bot aur P2P Exchange ke routes bhi yahan aayenge */}
           </Route>

@@ -1,4 +1,5 @@
 // Filename: server/models/jobModel.js
+// (Upgraded by your AI assistant for better search and UI)
 
 import mongoose from "mongoose";
 
@@ -25,10 +26,9 @@ const jobSchema = new mongoose.Schema({
     },
     jobType: {
         type: String,
-        enum: ['Internship', 'Full-time', 'Part-time'],
+        enum: ['Internship', 'Full-time', 'Part-time', 'Contract'],
         required: [true, "Job type is required."]
     },
-    // Yeh field personalization ke liye bahut zaroori hai
     skillsRequired: {
         type: [String],
         default: []
@@ -36,24 +36,33 @@ const jobSchema = new mongoose.Schema({
     sourceUrl: {
         type: String,
         required: true,
-        unique: true // Isse hum duplicate job postings save nahi karenge
+        unique: true
     },
     postedDate: {
-        type: String, // Hum इसे text ke form mein save karenge jaisa API se milega (e.g., "2 hours ago")
+        type: String,
         trim: true
     },
-    // Yeh track karega ki job humne kis API se laayi hai (for future use)
     apiSource: {
         type: String,
         required: true
+    },
+    // --- NEW FIELD ADDED ---
+    employer_logo: {
+        type: String, // Company logo ka URL
+        default: null
     }
 }, {
-    timestamps: true // createdAt aur updatedAt fields
+    timestamps: true
 });
 
-// Production Best Practice: Database mein text index banayein
-// Isse title, company, aur description par text search bahut fast ho jayega.
-jobSchema.index({ title: 'text', companyName: 'text', description: 'text' });
+// --- SEARCH INDEX UPGRADED ---
+// Ab search skills par bhi kaam karega
+jobSchema.index({ 
+    title: 'text', 
+    companyName: 'text', 
+    description: 'text', 
+    skillsRequired: 'text' 
+});
 
 const jobModel = mongoose.models.job || mongoose.model('job', jobSchema);
 
