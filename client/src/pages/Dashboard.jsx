@@ -1,5 +1,5 @@
 // Filename: client/src/pages/Dashboard.jsx
-// (No major changes needed, code is clean)
+// (Final version, redesigned by your AI assistant based on your original layout and new feedback)
 
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
@@ -9,111 +9,158 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { InterviewIcon, JobsIcon, P2PIcon } from "../components/ui/DashboardIcons";
 
-const Dashboard = () => {
-  const { backendUrl, user } = useContext(AppContent);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+// --- HELPER COMPONENT: Circular Progress Bar ---
+const CircularProgressBar = ({ percentage, size = 80 }) => {
+    const strokeWidth = 10;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * Math.PI * 2;
+    const dashOffset = circumference - (circumference * percentage) / 100;
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await axios.get(`${backendUrl}/api/dashboard`);
-        if (response.data.success) {
-          setDashboardData(response.data.data);
-        }
-      } catch (error) {
-        toast.error("Failed to load dashboard data.");
-        console.error("Dashboard fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, [backendUrl]);
-
-  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Loading Dashboard...</p>
-      </div>
+        <div className="relative" style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="transform -rotate-90">
+                <circle
+                    cx={size / 2} cy={size / 2} r={radius}
+                    strokeWidth={strokeWidth}
+                    className="stroke-slate-200"
+                    fill="transparent"
+                />
+                <circle
+                    cx={size / 2} cy={size / 2} r={radius}
+                    strokeWidth={strokeWidth}
+                    className="stroke-indigo-500 transition-all duration-1000 ease-in-out"
+                    fill="transparent"
+                    strokeLinecap="round"
+                    style={{
+                        strokeDasharray: circumference,
+                        strokeDashoffset: dashOffset,
+                    }}
+                />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-800">
+                {`${percentage}%`}
+            </span>
+        </div>
     );
-  }
+};
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar theme="light" />
-      <div className="container mx-auto max-w-7xl pt-24 sm:pt-28 p-4 sm:p-6">
-        {/* --- Header Section --- */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Welcome back, {user?.name}!
-          </h1>
-          <p className="mt-1 text-md text-gray-500">
-            Here's your mission control for everything EngiVerse.
-          </p>
-        </div>
 
-        {/* --- Main Dashboard Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* --- Primary Column (Launchpad) --- */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Card 1: AI Interviewer */}
-            <Link to="/ai-interviewer" className="block p-6 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg text-white hover:scale-102 transition-transform duration-300">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3 rounded-full"><InterviewIcon /></div>
-                <div>
-                  <h2 className="text-xl font-bold">Practice Interviews</h2>
-                  <p className="text-sm opacity-80">Build confidence with our AI Interview Bot</p>
-                </div>
-                <span className="ml-auto font-semibold">&rarr;</span>
-              </div>
-            </Link>
+const Dashboard = () => {
+    const { backendUrl, user } = useContext(AppContent);
+    const [dashboardData, setDashboardData] = useState({ profileCompletion: 75 }); // Default data for demonstration
+    const [loading, setLoading] = useState(true);
 
-            {/* Card 2: Job Aggregator - This link will now work */}
-            <Link to="/jobs" className="block p-6 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-xl shadow-lg text-white hover:scale-102 transition-transform duration-300">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3 rounded-full"><JobsIcon /></div>
-                <div>
-                  <h2 className="text-xl font-bold">Find Opportunities</h2>
-                  <p className="text-sm opacity-80">Discover internships and jobs matching your profile</p>
-                </div>
-                <span className="ml-auto font-semibold">&rarr;</span>
-              </div>
-            </Link>
+    // --- Original data fetching logic (untouched) ---
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const response = await axios.get(`${backendUrl}/api/dashboard`);
+                if (response.data.success) {
+                    setDashboardData(response.data.data);
+                }
+            } catch (error) {
+                toast.error("Failed to load dashboard data.");
+                console.error("Dashboard fetch error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDashboardData();
+    }, [backendUrl]);
 
-            {/* Card 3: P2P Skill Exchange */}
-            <Link to="/skill-exchange" className="block p-6 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg text-white hover:scale-102 transition-transform duration-300">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3 rounded-full"><P2PIcon /></div>
-                <div>
-                  <h2 className="text-xl font-bold">Collaborate with Peers</h2>
-                  <p className="text-sm opacity-80">Get help on projects or offer your skills</p>
-                </div>
-                <span className="ml-auto font-semibold">&rarr;</span>
-              </div>
-            </Link>
-          </div>
-
-          {/* --- Secondary Column (Profile Widget) --- */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="p-6 bg-white rounded-xl shadow-sm border">
-              <h3 className="font-bold text-gray-800">Profile Completion</h3>
-              <p className="text-sm text-gray-500 mt-1">Complete your profile for better recommendations.</p>
-              <div className="flex items-center gap-4 mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${dashboardData?.profileCompletion || 0}%` }}></div>
-                </div>
-                <span className="font-semibold text-indigo-600">{dashboardData?.profileCompletion || 0}%</span>
-              </div>
-              <Link to="/profile" className="mt-4 inline-block text-sm font-semibold text-indigo-600 hover:underline">
-                Go to Profile &rarr;
-              </Link>
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-100">
+                {/* Clean loading spinner */}
+                <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </div>
-          </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-100">
+            <Navbar theme="light" />
+            <div className="container mx-auto max-w-7xl pt-24 sm:pt-28 p-4 sm:p-6">
+                
+                {/* --- Header Section --- */}
+                <div className="mb-8 md:mb-10">
+                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+                        Welcome back, {user?.name?.split(' ')[0]}!
+                    </h1>
+                    <p className="mt-2 text-md text-slate-600">
+                        Here's your mission control for everything EngiVerse.
+                    </p>
+                </div>
+
+                {/* --- Main Dashboard Grid (Following Your Original Layout) --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* --- Primary Column (Launchpad) --- */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Card 1: AI Interviewer */}
+                        <Link to="/ai-interviewer" className="group block p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+                            <div className="flex items-center gap-5">
+                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
+                                    <InterviewIcon />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Practice Interviews</h2>
+                                    <p className="text-sm opacity-80 mt-1">Build confidence with our AI Interview Bot</p>
+                                </div>
+                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                            </div>
+                        </Link>
+
+                        {/* Card 2: Job Aggregator */}
+                        <Link to="/jobs" className="group block p-6 bg-gradient-to-br from-sky-400 to-cyan-500 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+                             <div className="flex items-center gap-5">
+                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
+                                    <JobsIcon />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Find Opportunities</h2>
+                                    <p className="text-sm opacity-80 mt-1">Discover jobs matching your profile</p>
+                                </div>
+                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                            </div>
+                        </Link>
+
+                        {/* Card 3: P2P Skill Exchange */}
+                        <Link to="/skill-exchange" className="group block p-6 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+                             <div className="flex items-center gap-5">
+                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
+                                    <P2PIcon />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Collaborate with Peers</h2>
+                                    <p className="text-sm opacity-80 mt-1">Get help on projects or offer your skills</p>
+                                </div>
+                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* --- Secondary Column (Profile Widget & More) --- */}
+                    <div className="lg:col-span-1 space-y-8">
+                        <div className="p-6 bg-white rounded-2xl shadow-lg border border-slate-200/80 text-center">
+                            <h3 className="text-lg font-bold text-slate-800">Profile Completion</h3>
+                            <div className="flex justify-center my-4">
+                               <CircularProgressBar percentage={dashboardData?.profileCompletion || 0} />
+                            </div>
+                            <p className="text-sm text-slate-500 mb-4">
+                                A complete profile gets 3x more views.
+                            </p>
+                            <Link to="/profile" className="w-full inline-block px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                                Go to Profile
+                            </Link>
+                        </div>
+                        {/* Aap yahan future mein aur widgets add kar sakte hain */}
+                    </div>
+
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;
