@@ -1,36 +1,34 @@
-// Filename: client/src/App.jsx
-// (Updated by your AI assistant with the new Jobs route)
+// Filename: client/src/App.jsx (UPDATED)
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Page Imports
 import Home from './pages/home.jsx';
 import Login from './pages/Login.jsx';
 import EmailVerify from './pages/EmailVerify.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import Dashboard from './pages/Dashboard.jsx';
 import Profile from './pages/Profile.jsx';
-import Jobs from './pages/Jobs.jsx'; // STEP 1: Naye Jobs page ko import karein
+import Jobs from './pages/Jobs.jsx';
+import SavedJobs from './pages/SavedJobs.jsx';
+import SkillExchange from "./pages/SkillExchange";
+import TaskDetail from "./pages/TaskDetail";
+import CreateTask from './pages/CreateTask.jsx';
+import Friends from './pages/Friends.jsx';
+import MessagesPage from './pages/MessagesPage.jsx';
+import MyTasks from './pages/MyTasks.jsx'; 
+
+// Component Imports
 import ProtectedRoute from './components/ui/ProtectedRoute.jsx';
-import SavedJobs from './pages/SavedJobs.jsx'
 
 const App = () => {
   return (
     <div className="relative w-full min-h-screen">
       <div className="relative z-10">
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
+        <ToastContainer theme="dark" position="top-right" autoClose={3000} />
         <Routes>
           {/* --- PUBLIC ROUTES --- */}
           <Route path='/' element={<Home />} />
@@ -41,13 +39,25 @@ const App = () => {
           {/* --- PROTECTED ROUTES --- */}
           <Route element={<ProtectedRoute />}>
             <Route path='/dashboard' element={<Dashboard />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/messages" element={<MessagesPage />} /> 
+            <Route path="/messages/:recipientId" element={<MessagesPage />} />
+            {/* Profile Routes */}
             <Route path='/profile' element={<Profile />} />
+            <Route path='/profile/:userId' element={<Profile />} />
             
-            {/* STEP 2: Naya /jobs route yahan add karein */}
+            {/* Job Routes */}
             <Route path='/jobs' element={<Jobs />} />
             <Route path='/saved-jobs' element={<SavedJobs />} />
             
-            {/* Future mein AI Bot aur P2P Exchange ke routes bhi yahan aayenge */}
+            {/* P2P Skill Exchange Routes */}
+            <Route path="/skill-exchange" element={<SkillExchange />} />
+            <Route path="/tasks/:taskId" element={<TaskDetail />} />
+            <Route path="/create-task" element={<CreateTask />} />
+            
+            {/* --- NAYA ROUTE ADD KAREIN --- */}
+            <Route path="/my-tasks" element={<MyTasks />} />
+
           </Route>
           
         </Routes>

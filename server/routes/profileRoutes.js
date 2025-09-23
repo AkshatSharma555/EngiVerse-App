@@ -1,20 +1,18 @@
-// Filename: server/routes/profileRoutes.js
+// Filename: server/routes/profileRoutes.js (CORRECTED)
 
-import express from "express";
-import userAuth from "../middleware/userAuth.js";
-// Naye uploadProfilePicture function ko import karo
-import { getProfile, updateProfile, uploadProfilePicture } from "../controllers/profileController.js";
-// Apne cloudinary config se upload middleware import karo
-import upload from "../config/cloudinary.js";
+import express from 'express';
+import userAuth from '../middleware/userAuth.js';
+// Import the specific uploader for profile pictures
+import { uploadProfilePicture } from '../middleware/multer.js';
+import { getProfile, updateProfile, uploadPicture } from '../controllers/profileController.js';
 
-const profileRouter = express.Router();
+const router = express.Router();
 
-profileRouter.get("/", userAuth, getProfile);
-profileRouter.put("/", userAuth, updateProfile);
+router.get('/', userAuth, getProfile);
+router.get('/:userId', userAuth, getProfile);
+router.put('/', userAuth, updateProfile);
 
-// --- YEH NAYI LINE HAI ---
-// Yeh route file upload handle karega
-// Middleware Chain: pehle userAuth, fir multer ka upload, fir controller
-profileRouter.post("/upload-picture", userAuth, upload.single('profilePicture'), uploadProfilePicture);
+// Use the correct 'uploadProfilePicture' middleware here
+router.post('/upload-picture', userAuth, uploadProfilePicture.single('profilePicture'), uploadPicture);
 
-export default profileRouter;
+export default router;

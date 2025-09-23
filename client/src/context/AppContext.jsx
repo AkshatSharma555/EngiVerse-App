@@ -1,54 +1,84 @@
-// Filename: client/src/context/AppContext.jsx
-// (Refactored by your AI assistant for robustness and efficiency)
+// Filename: client/src/context/AppContext.jsx (FINAL & MOST ROBUST VERSION)
 
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
+import { toast } from 'react-toastify';
 
 export const AppContent = createContext(null);
 
 export const AppContextProvider = (props) => {
-  // Best practice: isse main.jsx mein rakhein, par yahan bhi kaam karega
-  axios.defaults.withCredentials = true;
+    axios.defaults.withCredentials = true;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [socket, setSocket] = useState(null);
+    const [notificationTrigger, setNotificationTrigger] = useState(0);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  
-  // Hum 'isLoggedin' ki jagah sirf 'user' state se kaam chalayenge
-  // Agar 'user' null nahi hai, toh user logged in hai.
-  const [user, setUser] = useState(null);
-  
-  // Yeh 'flicker' problem ko solve karegi
-  const [loading, setLoading] = useState(true);
+    // This effect fetches the user's initial status. It only runs once.
+    useEffect(() => {
+        const checkUserStatus = async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.get(`${backendUrl}/api/auth/is-auth`);
+                if (data.success) {
+                    setUser(data.user);
+                } else {
+                    setUser(null);
+                }
+            } catch (error) {
+                console.log("User not authenticated.");
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkUserStatus();
+    }, [backendUrl]);
 
-  const checkUserStatus = async () => {
-    try {
-      // Hum ab sirf ek hi API call karenge
-      const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
-      if (data.success) {
-        setUser(data.user); // User ka poora data set karein
-      }
-    } catch (error) {
-      // Agar error aaye (e.g., 401), toh user logged in nahi hai
-      console.log("User not authenticated.");
-      setUser(null);
-    } finally {
-      // Chahe success ho ya error, check complete ho gaya hai
-      setLoading(false);
-    }
-  };
+    // This effect manages the socket connection.
+    // It is now dependent on user._id (a primitive string), not the whole user object.
+    // This prevents it from re-running unnecessarily if setUser is called elsewhere with the same user data.
+    useEffect(() => {
+        if (user?._id) {
+            const newSocket = io(backendUrl, {
+                query: { userId: user._id },
+                // Important for preventing immediate disconnects in some environments
+                transports: ['websocket'] 
+            });
 
-  useEffect(() => {
-    checkUserStatus();
-  }, []);
+            setSocket(newSocket);
 
-  const value = {
-    backendUrl,
-    user, // userData ki jagah ab hum 'user' use karenge
-    setUser,
-    loading, // loading state ko bhi provide karein
-    checkUserStatus, // Taki logout ke baad re-check kar sakein
-  };
+            // Setup listeners
+            newSocket.on('newNotification', (notification) => {
+                toast.info(`🔔 New friend request from ${notification.sender.name}!`);
+            });
+            
+            // This is the cleanup function. It runs ONLY when user._id changes (i.e., on logout).
+            return () => {
+                newSocket.close();
+            };
+        } else {
+            // If there's no user, ensure any existing socket is disconnected.
+            if (socket) {
+                socket.close();
+                setSocket(null);
+            }
+        }
+    // The dependency array is the key to the fix.
+    }, [user?._id, backendUrl]); 
 
-  return (
-    <AppContent.Provider value={value}>{props.children}</AppContent.Provider>
-  );
+    const value = {
+        backendUrl,
+        user,
+        setUser,
+        loading,
+        socket,
+        setNotificationTrigger
+    };
+
+    return (
+        <AppContent.Provider value={value}>{props.children}</AppContent.Provider>
+    );
 };

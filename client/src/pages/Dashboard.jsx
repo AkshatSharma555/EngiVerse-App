@@ -1,5 +1,4 @@
-// Filename: client/src/pages/Dashboard.jsx
-// (Final version, redesigned by your AI assistant based on your original layout and new feedback)
+// Filename: client/src/pages/Dashboard.jsx (Updated)
 
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
@@ -11,6 +10,7 @@ import { InterviewIcon, JobsIcon, P2PIcon } from "../components/ui/DashboardIcon
 
 // --- HELPER COMPONENT: Circular Progress Bar ---
 const CircularProgressBar = ({ percentage, size = 80 }) => {
+    // ... (This component remains unchanged)
     const strokeWidth = 10;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * Math.PI * 2;
@@ -19,27 +19,10 @@ const CircularProgressBar = ({ percentage, size = 80 }) => {
     return (
         <div className="relative" style={{ width: size, height: size }}>
             <svg width={size} height={size} className="transform -rotate-90">
-                <circle
-                    cx={size / 2} cy={size / 2} r={radius}
-                    strokeWidth={strokeWidth}
-                    className="stroke-slate-200"
-                    fill="transparent"
-                />
-                <circle
-                    cx={size / 2} cy={size / 2} r={radius}
-                    strokeWidth={strokeWidth}
-                    className="stroke-indigo-500 transition-all duration-1000 ease-in-out"
-                    fill="transparent"
-                    strokeLinecap="round"
-                    style={{
-                        strokeDasharray: circumference,
-                        strokeDashoffset: dashOffset,
-                    }}
-                />
+                <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} className="stroke-slate-200" fill="transparent"/>
+                <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} className="stroke-indigo-500 transition-all duration-1000 ease-in-out" fill="transparent" strokeLinecap="round" style={{ strokeDasharray: circumference, strokeDashoffset: dashOffset }}/>
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-800">
-                {`${percentage}%`}
-            </span>
+            <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-800">{`${percentage}%`}</span>
         </div>
     );
 };
@@ -47,10 +30,9 @@ const CircularProgressBar = ({ percentage, size = 80 }) => {
 
 const Dashboard = () => {
     const { backendUrl, user } = useContext(AppContent);
-    const [dashboardData, setDashboardData] = useState({ profileCompletion: 75 }); // Default data for demonstration
+    const [dashboardData, setDashboardData] = useState({ profileCompletion: 0, openTaskCount: 0 }); // Default data updated
     const [loading, setLoading] = useState(true);
 
-    // --- Original data fetching logic (untouched) ---
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -71,8 +53,7 @@ const Dashboard = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-100">
-                {/* Clean loading spinner */}
-                <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </div>
         );
     }
@@ -92,50 +73,53 @@ const Dashboard = () => {
                     </p>
                 </div>
 
-                {/* --- Main Dashboard Grid (Following Your Original Layout) --- */}
+                {/* --- Main Dashboard Grid --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                     {/* --- Primary Column (Launchpad) --- */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Card 1: AI Interviewer */}
                         <Link to="/ai-interviewer" className="group block p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-                            <div className="flex items-center gap-5">
-                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
-                                    <InterviewIcon />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold">Practice Interviews</h2>
-                                    <p className="text-sm opacity-80 mt-1">Build confidence with our AI Interview Bot</p>
-                                </div>
-                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
-                            </div>
+                           {/* ... (no changes here) ... */}
+                           <div className="flex items-center gap-5">
+                               <div className="bg-white/20 p-4 rounded-xl shadow-inner"><InterviewIcon /></div>
+                               <div>
+                                   <h2 className="text-xl font-bold">Practice Interviews</h2>
+                                   <p className="text-sm opacity-80 mt-1">Build confidence with our AI Interview Bot</p>
+                               </div>
+                               <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                           </div>
                         </Link>
 
                         {/* Card 2: Job Aggregator */}
                         <Link to="/jobs" className="group block p-6 bg-gradient-to-br from-sky-400 to-cyan-500 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-                             <div className="flex items-center gap-5">
-                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
-                                    <JobsIcon />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold">Find Opportunities</h2>
-                                    <p className="text-sm opacity-80 mt-1">Discover jobs matching your profile</p>
-                                </div>
-                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
-                            </div>
+                           {/* ... (no changes here) ... */}
+                            <div className="flex items-center gap-5">
+                               <div className="bg-white/20 p-4 rounded-xl shadow-inner"><JobsIcon /></div>
+                               <div>
+                                   <h2 className="text-xl font-bold">Find Opportunities</h2>
+                                   <p className="text-sm opacity-80 mt-1">Discover jobs matching your profile</p>
+                               </div>
+                               <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                           </div>
                         </Link>
 
+                        {/* === CHANGE IS HERE === */}
                         {/* Card 3: P2P Skill Exchange */}
                         <Link to="/skill-exchange" className="group block p-6 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                              <div className="flex items-center gap-5">
-                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
-                                    <P2PIcon />
-                                </div>
-                                <div>
+                                <div className="bg-white/20 p-4 rounded-xl shadow-inner"><P2PIcon /></div>
+                                <div className="flex-grow">
                                     <h2 className="text-xl font-bold">Collaborate with Peers</h2>
                                     <p className="text-sm opacity-80 mt-1">Get help on projects or offer your skills</p>
                                 </div>
-                                <span className="ml-auto text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+                                {/* Live Task Count Badge */}
+                                {dashboardData.openTaskCount > 0 && (
+                                    <div className="flex-shrink-0 bg-white/25 text-white text-sm font-bold px-4 py-2 rounded-full shadow-inner">
+                                        {dashboardData.openTaskCount} Open Task{dashboardData.openTaskCount > 1 ? 's' : ''}
+                                    </div>
+                                )}
+                                <span className="ml-2 text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
                             </div>
                         </Link>
                     </div>
@@ -154,7 +138,6 @@ const Dashboard = () => {
                                 Go to Profile
                             </Link>
                         </div>
-                        {/* Aap yahan future mein aur widgets add kar sakte hain */}
                     </div>
 
                 </div>

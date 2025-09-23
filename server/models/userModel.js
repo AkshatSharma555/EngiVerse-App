@@ -29,6 +29,8 @@ const userSchema = new mongoose.Schema({
   isAccountVerified: { type: Boolean, default: false },
   resetOtp: { type: String, select: false },
   resetOtpExpireAt: { type: Number, select: false },
+
+  engiCoins: { type: Number, default: 50 },
   
   // --- NEW: User Profile Fields ---
   collegeName: {
@@ -64,7 +66,12 @@ const userSchema = new mongoose.Schema({
     linkedIn: { type: String, trim: true, default: '' },
     github: { type: String, trim: true, default: '' },
     portfolio: { type: String, trim: true, default: '' }
-  }
+  },
+
+ friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 
 }, {
   // --- BEST PRACTICE: Timestamps ---
@@ -72,6 +79,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-const userModel = mongoose.models.user || mongoose.model('user', userSchema);
+const userModel = mongoose.models.User || mongoose.model('User', userSchema);
+
 
 export default userModel;

@@ -1,97 +1,111 @@
-// Filename: server/controllers/profileController.js
+// Filename: server/controllers/profileController.js (COMPLETE VERSION)
 
-import userModel from "../models/userModel.js";
+import User from '../models/userModel.js';
+import FriendRequest from '../models/friendRequestModel.js';
+import mongoose from 'mongoose';
 
-// @desc    Get user's profile data
-// @route   GET /api/profile
-// @access  Private
+// @desc    Get user profile data
+// @route   GET /api/profile/:userId?
+// @desc    Get user profile data
+// @route   GET /api/profile/:userId?
 export const getProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await userModel.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-    return res.status(200).json({ success: true, data: user });
-  } catch (error) {
-    console.error("Get Profile Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
-  }
+    try {
+        const loggedInUserId = req.user.id;
+        const profileUserId = req.params.userId || loggedInUserId;
+
+        // --- FINAL FIX IS HERE (BACKEND) ---
+        // 1. Check if the provided ID is a valid MongoDB ObjectId format.
+        // If not, it's an invalid request (like "undefined").
+        if (!mongoose.Types.ObjectId.isValid(profileUserId)) {
+            return res.status(404).json({ success: false, message: "User not found (Invalid ID)." });
+        }
+
+        // 2. Proceed with the valid ID
+        const user = await User.findById(profileUserId).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+
+        // ... (Friendship status logic remains the same)
+        let friendship = null;
+        if (loggedInUserId !== profileUserId) {
+            const areFriends = user.friends.includes(loggedInUserId);
+            if (areFriends) {
+                friendship = { status: 'friends' };
+            } else {
+                const pendingRequest = await FriendRequest.findOne({
+                    $or: [
+                        { fromUser: loggedInUserId, toUser: profileUserId },
+                        { fromUser: profileUserId, toUser: loggedInUserId }
+                    ],
+                    status: 'pending'
+                });
+                if (pendingRequest) {
+                    if (pendingRequest.fromUser.toString() === loggedInUserId) {
+                        friendship = { status: 'request_sent', requestId: pendingRequest._id };
+                    } else {
+                        friendship = { status: 'request_received', requestId: pendingRequest._id };
+                    }
+                } else {
+                    friendship = { status: 'not_friends' };
+                }
+            }
+        }
+        
+        // The data structure from your code was { user, friendship }, let's keep it
+        // but ensure we send the user object directly, not nested inside another user object.
+        const responseData = { ...user.toObject(), friendship };
+
+        res.status(200).json({ success: true, data: responseData });
+    } catch (error) {
+        // This will now only catch real server errors, not CastError for "undefined"
+        console.error("Error in getProfile:", error);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
 };
 
-// @desc    Update user's profile data
-// @route   PUT /api/profile
-// @access  Private
+// @desc    Update user profile data
+// @route   PUT /api/profile
 export const updateProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { collegeName, branch, graduationYear, skills, bio, socialLinks } = req.body;
-
-    const user = await userModel.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // --- YEH LOGIC THEEK KIYA GAYA HAI ---
-    // Hum `||` operator ki jagah check kar rahe hain ki data `undefined` toh nahi hai.
-    // Isse empty strings ("") bhi aaram se save ho jayengi.
-    if (collegeName !== undefined) {
-        user.collegeName = collegeName;
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        ).select('-password');
+        
+        res.status(200).json({ success: true, message: "Profile updated successfully.", data: updatedUser });
+    } catch (error) {
+        console.error("Error in updateProfile:", error);
+        res.status(500).json({ success: false, message: "Server error while updating profile." });
     }
-    if (branch !== undefined) {
-        user.branch = branch;
-    }
-    if (graduationYear !== undefined) {
-        user.graduationYear = graduationYear;
-    }
-    if (skills !== undefined) {
-        user.skills = skills;
-    }
-    if (bio !== undefined) {
-        user.bio = bio;
-    }
-    if (socialLinks !== undefined) {
-        user.socialLinks = socialLinks;
-    }
-
-    const updatedUser = await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Profile updated successfully!",
-      data: updatedUser,
-    });
-  } catch (error) {
-    console.error("Update Profile Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
-  }
 };
 
-// @desc    Upload user's profile picture
-// @route   POST /api/profile/upload-picture
-// @access  Private
-export const uploadProfilePicture = async (req, res) => {
-  try {
-    const imageUrl = req.file.path;
+// @desc    Upload a profile picture
+// @route   POST /api/profile/upload-picture
+export const uploadPicture = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No image file provided." });
+        }
+        
+        // The file is uploaded to Cloudinary by multer, req.file.path contains the URL
+        const profilePictureUrl = req.file.path;
 
-    const user = await userModel.findByIdAndUpdate(
-      req.user.id,
-      { profilePicture: imageUrl },
-      { new: true }
-    );
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { profilePicture: profilePictureUrl },
+            { new: true }
+        ).select('-password');
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Profile picture uploaded successfully!",
-      data: user,
-    });
-  } catch (error) {
-    console.error("Upload Picture Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
-  }
+        res.status(200).json({
+            success: true,
+            message: "Profile picture uploaded successfully.",
+            data: { profilePicture: updatedUser.profilePicture }
+        });
+    } catch (error) {
+        console.error("Error in uploadPicture:", error);
+        res.status(500).json({ success: false, message: "Server error while uploading picture." });
+    }
 };
