@@ -4,6 +4,7 @@ import Task from "../models/taskModel.js";
 import User from "../models/userModel.js";
 import mongoose from "mongoose";
 import Offer from "../models/offerModel.js";
+import Notification from "../models/notificationModel.js";
 
 // createTask function remains the same
 export const createTask = async (req, res) => {
@@ -121,20 +122,15 @@ export const completeTask = async (req, res) => {
         const { taskId } = req.params;
         const taskOwnerId = req.user.id;
         const task = await Task.findById(taskId);
-        if (!task) {
-            return res.status(404).json({ success: false, message: "Task not found." });
-        }
-        if (task.user.toString() !== taskOwnerId) {
-            return res.status(403).json({ success: false, message: "Only the task owner can mark it as complete." });
-        }
-        if (task.status !== 'in_progress') {
-            return res.status(400).json({ success: false, message: "This task is not in progress." });
-        }
-        if (!task.assignedTo) {
-            return res.status(400).json({ success: false, message: "No user is assigned to this task." });
-        }
+
+        if (!task) { return res.status(404).json({ success: false, message: "Task not found." }); }
+        if (task.user.toString() !== taskOwnerId) { return res.status(403).json({ success: false, message: "Only the task owner can mark it as complete." }); }
+        if (task.status !== 'in_progress') { return res.status(400).json({ success: false, message: "This task is not in progress." }); }
+        if (!task.assignedTo) { return res.status(400).json({ success: false, message: "No user is assigned to this task." }); }
+
         const helperId = task.assignedTo;
         const helper = await User.findById(helperId);
+
         if (!helper) {
             const owner = await User.findById(taskOwnerId);
             owner.engiCoins += task.bounty;
@@ -142,9 +138,51 @@ export const completeTask = async (req, res) => {
             await Promise.all([owner.save(), task.save()]);
             return res.status(404).json({ success: false, message: "Helper not found. Bounty has been refunded." });
         }
-        helper.engiCoins += task.bounty;
+
+        // 1. Mark task as 'completed' BEFORE counting, so the count is accurate
         task.status = 'completed';
+        
+        // 2. Transfer coins
+        helper.engiCoins += task.bounty;
+
+        // 3. Badge Logic
+        let newBadgesAwarded = [];
+        for (const skill of task.skills) {
+            // Count includes the task we just completed
+            const completedTaskCount = await Task.countDocuments({
+                assignedTo: helperId,
+                status: 'completed',
+                skills: skill
+            });
+
+            const badgeTiers = [
+                { count: 10, name: `${skill} Expert` },
+                { count: 5, name: `${skill} Apprentice` },
+                { count: 1, name: `${skill} Novice` }
+            ];
+
+            for (const tier of badgeTiers) {
+                if (completedTaskCount >= tier.count && !helper.badges.includes(tier.name)) {
+                    helper.badges.push(tier.name);
+                    newBadgesAwarded.push(tier.name);
+                    break; 
+                }
+            }
+        }
+        
+        // 4. Save all changes
         await Promise.all([helper.save(), task.save()]);
+        
+        // 5. Send notification for new badges
+        if (newBadgesAwarded.length > 0) {
+            await Notification.create({
+                recipient: helperId,
+                sender: taskOwnerId,
+                type: 'badge_awarded',
+                link: `/profile/${helperId}`,
+            });
+        }
+
         res.status(200).json({ success: true, message: `Task marked as complete! ${task.bounty} EngiCoins transferred to ${helper.name}.` });
     } catch (error) {
         console.error("Error in completeTask:", error);

@@ -31,6 +31,8 @@ const userSchema = new mongoose.Schema({
   resetOtpExpireAt: { type: Number, select: false },
 
   engiCoins: { type: Number, default: 50 },
+
+  badges: [{ type: String }],
   
   // --- NEW: User Profile Fields ---
   collegeName: {

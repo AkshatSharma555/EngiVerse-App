@@ -201,24 +201,47 @@ const renderFriendshipButton = () => {
                 </Link>
 
                 <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm">
-                    {/* Header */}
-                    <div className="p-6 border-b border-gray-200">
-                        <div className="flex flex-col md:flex-row items-center gap-6">
-                            <img src={imagePreview || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name || "user")}`} alt="Profile" className="w-24 h-24 rounded-full object-cover bg-gray-200 border-4 border-white shadow-md"/>
-                            <div className="flex-1 text-center md:text-left">
-                                <h1 className="text-3xl font-bold text-gray-900">{profileData.name}</h1>
-                                <p className="mt-1 text-md text-gray-500">{profileData.collegeName || "College not specified"}</p>
-                                <div className="flex gap-4 justify-center md:justify-start mt-3">
-                                    {profileData.socialLinks?.linkedIn && <a href={profileData.socialLinks.linkedIn} target="_blank" rel="noopener noreferrer"><LinkedInIcon /></a>}
-                                    {profileData.socialLinks?.github && <a href={profileData.socialLinks.github} target="_blank" rel="noopener noreferrer"><GitHubIcon /></a>}
-                                    {profileData.socialLinks?.portfolio && <a href={profileData.socialLinks.portfolio} target="_blank" rel="noopener noreferrer"><PortfolioIcon /></a>}
-                                </div>
-                            </div>
-                            <div className="mt-4 md:mt-0">
-                                {renderFriendshipButton()}
-                            </div>
-                        </div>
-                    </div>
+                                        {/* Header */}
+                                        <div className="p-6 border-b border-gray-200">
+                                                <div className="flex flex-col md:flex-row items-center gap-6">
+                                                        <img src={imagePreview || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name || "user")}`} alt="Profile" className="w-24 h-24 rounded-full object-cover bg-gray-200 border-4 border-white shadow-md"/>
+                                                        <div className="flex-1 text-center md:text-left">
+                                                                <h1 className="text-3xl font-bold text-gray-900">{profileData.name}</h1>
+                                                                <p className="mt-1 text-md text-gray-500">{profileData.collegeName || "College not specified"}</p>
+                                                                <div className="flex gap-4 justify-center md:justify-start mt-3">
+                                                                        {profileData.socialLinks?.linkedIn && <a href={profileData.socialLinks.linkedIn} target="_blank" rel="noopener noreferrer"><LinkedInIcon /></a>}
+                                                                        {profileData.socialLinks?.github && <a href={profileData.socialLinks.github} target="_blank" rel="noopener noreferrer"><GitHubIcon /></a>}
+                                                                        {profileData.socialLinks?.portfolio && <a href={profileData.socialLinks.portfolio} target="_blank" rel="noopener noreferrer"><PortfolioIcon /></a>}
+                                                                </div>
+                                                        </div>
+                                                        <div className="mt-4 md:mt-0">
+                                                                {renderFriendshipButton()}
+                                                        </div>
+                                                </div>
+                                        </div>
+                                        {/* Badges Section: Display user's earned badges if available */}
+                                        {profileData.badges && Array.isArray(profileData.badges) && profileData.badges.length > 0 && (
+                                            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                                                {/* Left column: Title and description */}
+                                                <div className="md:col-span-1">
+                                                    <h2 className="text-lg font-semibold text-gray-800">Badges</h2>
+                                                    <p className="mt-1 text-sm text-gray-500">Recognitions earned from the community.</p>
+                                                </div>
+                                                {/* Right column: List of badges */}
+                                                <div className="md:col-span-2 flex flex-wrap gap-3 items-center">
+                                                    {profileData.badges.map((badge, idx) => (
+                                                        <span
+                                                            key={badge + idx}
+                                                            className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-100 px-3 py-1.5 text-sm font-semibold text-blue-800"
+                                                        >
+                                                            {/* Decorative SVG icon */}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M1.385 3.323a.5.5 0 0 1 .707 0L8 9.238l5.908-5.915a.5.5 0 0 1 .707.707L8.707 9.945l.21.21a.5.5 0 0 1 0 .707l-.21.21-5.908 5.915a.5.5 0 0 1-.707-.707L7.293 9.945l-.21-.21a.5.5 0 0 1 0-.707l.21-.21L1.385 3.323z"/></svg>
+                                                            {badge}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                     
                     <div className="divide-y divide-gray-200">
                         {isOwnProfile && (
