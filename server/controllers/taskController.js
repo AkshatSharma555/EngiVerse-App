@@ -123,6 +123,7 @@ export const completeTask = async (req, res) => {
         const taskOwnerId = req.user.id;
         const task = await Task.findById(taskId);
 
+        // --- Validations (No changes) ---
         if (!task) { return res.status(404).json({ success: false, message: "Task not found." }); }
         if (task.user.toString() !== taskOwnerId) { return res.status(403).json({ success: false, message: "Only the task owner can mark it as complete." }); }
         if (task.status !== 'in_progress') { return res.status(400).json({ success: false, message: "This task is not in progress." }); }
@@ -139,48 +140,51 @@ export const completeTask = async (req, res) => {
             return res.status(404).json({ success: false, message: "Helper not found. Bounty has been refunded." });
         }
 
-        // 1. Mark task as 'completed' BEFORE counting, so the count is accurate
+        // 1. Update task and user states
         task.status = 'completed';
-        
-        // 2. Transfer coins
         helper.engiCoins += task.bounty;
+        
+        // --- 2. NEW & SIMPLIFIED BADGE LOGIC ---
+        let newBadgeAwarded = null; // Track the new badge for notification
 
-        // 3. Badge Logic
-        let newBadgesAwarded = [];
-        for (const skill of task.skills) {
-            // Count includes the task we just completed
-            const completedTaskCount = await Task.countDocuments({
-                assignedTo: helperId,
-                status: 'completed',
-                skills: skill
-            });
+        // First, count how many tasks the helper has now completed
+        const totalTasksCompleted = await Task.countDocuments({
+            assignedTo: helperId,
+            status: 'completed'
+        }) + 1; // +1 for the current task
 
-            const badgeTiers = [
-                { count: 10, name: `${skill} Expert` },
-                { count: 5, name: `${skill} Apprentice` },
-                { count: 1, name: `${skill} Novice` }
-            ];
+        // Define badge tiers based on total tasks
+        const badgeTiers = [
+            { count: 50, name: 'EngiVerse Legend' },
+            { count: 25, name: 'Community Pillar' },
+            { count: 10, name: 'Expert Helper' },
+            { count: 5, name: 'Community Contributor' },
+            { count: 1, name: 'Helping Hand' }
+        ];
 
-            for (const tier of badgeTiers) {
-                if (completedTaskCount >= tier.count && !helper.badges.includes(tier.name)) {
-                    helper.badges.push(tier.name);
-                    newBadgesAwarded.push(tier.name);
-                    break; 
-                }
+        for (const tier of badgeTiers) {
+            // If user has completed enough tasks and doesn't have the badge yet
+            if (totalTasksCompleted >= tier.count && !helper.badges.includes(tier.name)) {
+                helper.badges.push(tier.name);
+                newBadgeAwarded = tier.name;
+                // Award only the highest new badge in this transaction and stop checking
+                break; 
             }
         }
         
-        // 4. Save all changes
+        // 3. Save all changes
         await Promise.all([helper.save(), task.save()]);
         
-        // 5. Send notification for new badges
-        if (newBadgesAwarded.length > 0) {
+        // 4. Send a notification if a new badge was awarded
+        if (newBadgeAwarded) {
             await Notification.create({
                 recipient: helperId,
                 sender: taskOwnerId,
-                type: 'badge_awarded',
+                type: 'badge_awarded', // We can create a new notification type
                 link: `/profile/${helperId}`,
+                // We'll handle the text on the frontend based on the type
             });
+            console.log(`Awarded badge: ${newBadgeAwarded} to ${helper.name}`);
         }
 
         res.status(200).json({ success: true, message: `Task marked as complete! ${task.bounty} EngiCoins transferred to ${helper.name}.` });
