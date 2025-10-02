@@ -25,6 +25,9 @@ import MessagesPage from "./pages/MessagesPage.jsx";
 import MyTasks from "./pages/MyTasks.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
 import Explore from './pages/Explore.jsx';
+import AIInterviewDashboard from "./pages/AIInterviewDashboard.jsx";
+import AIInterviewPage from "./pages/AIInterviewPage.jsx";
+import InterviewReport from './pages/InterviewReport.jsx';
 
 // Component Imports
 import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
@@ -46,6 +49,9 @@ const App = () => {
             
             {/* Routes that DON'T use the community layout */}
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/ai-interviewer" element={<AIInterviewDashboard />} />
+            <Route path="/practice-interviews" element={<AIInterviewPage />} />
+            <Route path="/interviews/report/:sessionId" element={<InterviewReport />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/jobs" element={<Jobs />} />

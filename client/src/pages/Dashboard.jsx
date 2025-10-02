@@ -78,9 +78,8 @@ const Dashboard = () => {
 
                     {/* --- Primary Column (Launchpad) --- */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Card 1: AI Interviewer */}
+                        {/* --- THIS CARD IS NOW A SIMPLE LINK --- */}
                         <Link to="/ai-interviewer" className="group block p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-                           {/* ... (no changes here) ... */}
                            <div className="flex items-center gap-5">
                                <div className="bg-white/20 p-4 rounded-xl shadow-inner"><InterviewIcon /></div>
                                <div>
