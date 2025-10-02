@@ -18,6 +18,7 @@ import friendRoutes from "./routes/friendRoutes.js"; // <-- Added
 import messageRoutes from "./routes/messageRoutes.js"; // <-- Added
 import notificationRoutes from "./routes/notificationRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
+
 const app = express();
 const port = process.env.PORT || 4000;
 connectDB();
@@ -47,6 +48,7 @@ app.use("/api/friends", friendRoutes); // <-- Added
 app.use("/api/messages", messageRoutes); // <-- Added
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/users", userRouter);
 
 server.listen(port, () =>
   console.log(`Server (with Socket.IO) started on PORT:${port}`)

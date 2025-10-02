@@ -1,9 +1,12 @@
-// Filename: client/src/App.jsx (UPDATED)
+// Filename: client/src/App.jsx (FINAL STRUCTURED VERSION)
 
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Layout Imports
+import CommunityLayout from "./components/ui/CommunityLayout";
 
 // Page Imports
 import Home from "./pages/home.jsx";
@@ -21,6 +24,7 @@ import Friends from "./pages/Friends.jsx";
 import MessagesPage from "./pages/MessagesPage.jsx";
 import MyTasks from "./pages/MyTasks.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
+import Explore from './pages/Explore.jsx';
 
 // Component Imports
 import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
@@ -39,27 +43,27 @@ const App = () => {
 
           {/* --- PROTECTED ROUTES --- */}
           <Route element={<ProtectedRoute />}>
+            
+            {/* Routes that DON'T use the community layout */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/friends" element={<Friends />} />
-            <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/messages/:recipientId" element={<MessagesPage />} />
-            {/* Profile Routes */}
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
-
-            {/* Job Routes */}
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/saved-jobs" element={<SavedJobs />} />
-
-            {/* P2P Skill Exchange Routes */}
-            <Route path="/skill-exchange" element={<SkillExchange />} />
             <Route path="/tasks/:taskId" element={<TaskDetail />} />
             <Route path="/create-task" element={<CreateTask />} />
-
-            {/* --- NAYA ROUTE ADD KAREIN --- */}
             <Route path="/my-tasks" element={<MyTasks />} />
-            {/* Leaderboard Route */}
-            <Route path="/leaderboard" element={<Leaderboard />} />
+
+            {/* === COMMUNITY SECTION WITH PERSISTENT LAYOUT === */}
+            <Route element={<CommunityLayout />}>
+              <Route path="/skill-exchange" element={<SkillExchange />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/messages/:recipientId" element={<MessagesPage />} />
+            </Route>
+
           </Route>
         </Routes>
       </div>
