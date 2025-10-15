@@ -48,19 +48,19 @@ const userSchema = new mongoose.Schema({
   graduationYear: {
     type: Number,
     min: 2020, // Example validation
-    max: 2035
+    max: 3025
   },
   skills: {
     type: [String], // Array of Strings
     default: []
   },
   profilePicture: {
-    type: String, // Yahan image ka URL save hoga
+    type: String, 
     default: ''
   },
   bio: {
     type: String,
-    maxLength: 250, // Bio ki max length
+    maxLength: 50000, 
     trim: true,
     default: ''
   },
