@@ -1,6 +1,3 @@
-// Filename: server/controllers/authController.js
-// (Final, fully reviewed, and corrected version by your AI assistant)
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
@@ -9,6 +6,7 @@ import {
   EMAIL_VERIFY_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
 } from "../config/emailTemplate.js";
+
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -24,7 +22,15 @@ export const register = async (req, res) => {
     const user = new userModel({ name, email, password: hashedPassword });
     await user.save();
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", maxAge: 7 * 24 * 60 * 60 * 1000 });
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
+
+    res.cookie("token", token, cookieOptions);
+
     const mailOptions = { from: process.env.SENDER_EMAIL, to: email, subject: "Welcome to EngiVerse!", text: `Welcome aboard! Your account has been created with email id: ${email}` };
     await transporter.sendMail(mailOptions);
     const userData = await userModel.findById(user._id).select("-password");
@@ -46,7 +52,16 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", maxAge: 7 * 24 * 60 * 60 * 1000 });
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
+
+    res.cookie("token", token, cookieOptions);
+    
     const userData = await userModel.findById(user._id).select("-password");
     return res.status(200).json({ success: true, message: "Login successful", user: userData });
   } catch (error) {
@@ -57,7 +72,15 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "strict" });
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    };
+
+  
+    res.clearCookie("token", cookieOptions);
+
     return res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout Error:", error);
