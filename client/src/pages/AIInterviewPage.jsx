@@ -4,11 +4,30 @@ import axios from 'axios';
 import useSpeechRecognition from '../hooks/useSpeechRecognition';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-// --- Helper Components & Icons ---
-const MicIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>;
+// --- Premium Icons ---
+const MicIcon = ({ active }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" className={active ? "animate-pulse" : ""}>
+        <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+    </svg>
+);
 const StopIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><rect width="10" height="10" x="3" y="3" rx="1"/></svg>;
-const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11z"/></svg>;
-const EvaAvatar = () => <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md flex-shrink-0">E</div>;
+const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11z"/></svg>;
+const ExitIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>;
+
+// --- UI Components ---
+const EvaAvatar = () => (
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0 ring-2 ring-white/10">
+        E
+    </div>
+);
+
+const TypingIndicator = () => (
+    <div className="flex space-x-1.5 p-2">
+        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+    </div>
+);
 
 const AIInterviewPage = () => {
     const { backendUrl } = useContext(AppContent);
@@ -21,30 +40,66 @@ const AIInterviewPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const messagesEndRef = useRef(null);
 
-    // Get the selected voice from the previous page's state
-    const { voice } = location.state || {};
+    // Get params from navigation state. Default to female if accessed directly (fallback)
+    const { voice, sessionId: existingSessionId, isResuming } = location.state || { voice: 'female' };
 
-    // If the user lands on this page directly without selecting a voice, redirect them
+    // --- 1. UX: Redirect if no state found (Direct URL access) ---
     useEffect(() => {
-        if (!voice) {
-            navigate('/ai-interviewer');
+        if (!location.state) {
+            navigate('/dashboard'); 
         }
-    }, [voice, navigate]);
+    }, [location.state, navigate]);
 
-    // This robust 'speak' function waits for the browser's voices to be loaded
+    // --- 2. LOGIC: Robust Voice Handler (Fixes Silent Issue) ---
     const speak = (textToSpeak) => {
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        if (!textToSpeak) return;
+        
+        // Stop any previous speech
+        window.speechSynthesis.cancel();
 
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        
         const setVoiceAndSpeak = () => {
-            const voices = window.speechSynthesis.getVoices();
+            const allVoices = window.speechSynthesis.getVoices();
+            
+            // Safety Check: If browser hasn't loaded voices yet
+            if (allVoices.length === 0) return;
+
+            // Filter for English voices only
+            const englishVoices = allVoices.filter(v => v.lang.includes('en'));
+            
+            let selectedVoice = null;
+
             if (voice === 'male') {
-                utterance.voice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Male')) || voices[2];
+                // Try specific high-quality male voices often found in OS
+                selectedVoice = englishVoices.find(v => 
+                    v.name.toLowerCase().includes('google us english') || 
+                    v.name.toLowerCase().includes('david') || 
+                    v.name.toLowerCase().includes('male')
+                );
             } else {
-                utterance.voice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) || voices[1];
+                // Try specific high-quality female voices
+                selectedVoice = englishVoices.find(v => 
+                    v.name.toLowerCase().includes('google uk english female') || 
+                    v.name.toLowerCase().includes('zira') || 
+                    v.name.toLowerCase().includes('female')
+                );
             }
+
+            // FALLBACK: If preferred gender not found, use the first available English voice
+            if (!selectedVoice) {
+                console.warn("Preferred voice not found, using fallback.");
+                selectedVoice = englishVoices[0] || allVoices[0];
+            }
+
+            utterance.voice = selectedVoice;
+            utterance.rate = 1; // Normal speed
+            utterance.pitch = voice === 'male' ? 0.9 : 1.05; // Slight pitch adjustment for realism
+
             window.speechSynthesis.speak(utterance);
         };
-        
+
+        // Browser Compatibility: Chrome needs onvoiceschanged
         if (window.speechSynthesis.getVoices().length > 0) {
             setVoiceAndSpeak();
         } else {
@@ -52,39 +107,48 @@ const AIInterviewPage = () => {
         }
     };
 
-    // This useEffect runs once to start the session
+    // --- 3. LOGIC: Initialize Session (New vs Resume) ---
     useEffect(() => {
-        if (!voice) return; 
-        
-        setIsLoading(true);
-        const startSession = async () => {
+        const initSession = async () => {
+            setIsLoading(true);
             try {
-                // The 'domain' is no longer sent to the backend
-                const response = await axios.post(`${backendUrl}/api/interviews/start`);
-                if (response.data.success) {
-                    const { sessionId, initialMessage } = response.data;
-                    setSessionId(sessionId);
-                    setHistory([{ role: 'model', text: initialMessage }]);
-                    speak(initialMessage);
+                if (isResuming && existingSessionId) {
+                    // RESUME LOGIC: Fetch old history
+                    const response = await axios.get(`${backendUrl}/api/interviews/${existingSessionId}`);
+                    if (response.data.success) {
+                        setSessionId(existingSessionId);
+                        const fetchedHistory = response.data.data.conversationHistory;
+                        setHistory(fetchedHistory);
+                        // Note: We don't auto-speak on resume to avoid jarring the user
+                    }
+                } else {
+                    // NEW SESSION LOGIC
+                    const response = await axios.post(`${backendUrl}/api/interviews/start`);
+                    if (response.data.success) {
+                        const { sessionId, initialMessage } = response.data;
+                        setSessionId(sessionId);
+                        setHistory([{ role: 'model', text: initialMessage }]);
+                        speak(initialMessage);
+                    }
                 }
             } catch (error) {
-                console.error("Failed to start session", error);
+                console.error("Failed to initialize session", error);
             } finally {
                 setIsLoading(false);
             }
         };
-        startSession();
 
-        // Cleanup function to stop any ongoing speech when the user leaves the page
+        initSession();
+
+        // Cleanup: Stop speaking when leaving page
         return () => window.speechSynthesis.cancel();
-    }, [backendUrl, voice]); // Runs only when these values change
+    }, [backendUrl, existingSessionId, isResuming]); // Removed 'voice' dependency to prevent restart on re-render
     
-    // Auto-scroll to the latest message
+    // Auto-scroll logic
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [history]);
+    }, [history, isLoading]);
 
-    // Function to send user's message to the backend
     const handleSend = async (messageText) => {
         if (!messageText.trim() || !sessionId || isLoading) return;
         if (isListening) stopListening();
@@ -107,43 +171,69 @@ const AIInterviewPage = () => {
             setIsLoading(false);
         }
     };
-    
-    // Shows a redirecting message if the page is accessed directly
-    if (!voice) {
-        return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Redirecting...</div>;
-    }
 
     return (
-        <div className="flex flex-col h-screen bg-slate-900 text-white font-sans">
-            <header className="flex items-center justify-between p-4 border-b border-slate-700 flex-shrink-0">
-                <Link to="/ai-interviewer" className="text-2xl font-bold text-white flex items-center gap-2">
-                    <span className="text-indigo-400">Engi</span>Verse <span className="text-sm font-light text-slate-400">AI Interview</span>
-                </Link>
-                <div className="flex items-center gap-2 text-green-400 animate-fade-in">
-                    <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>
-                    Live
+        <div className="flex flex-col h-screen bg-[#0F1117] text-white font-sans overflow-hidden">
+            
+            {/* --- UX: Premium Header --- */}
+            <header className="absolute top-0 w-full z-20 px-6 py-4 flex items-center justify-between bg-[#0F1117]/80 backdrop-blur-md border-b border-white/5">
+                <button 
+                    onClick={() => navigate('/dashboard')} 
+                    className="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/5"
+                >
+                    <ExitIcon /> 
+                    <span className="group-hover:translate-x-0.5 transition-transform">Exit Session</span>
+                </button>
+                
+                <div className="flex items-center gap-3 px-4 py-1.5 bg-indigo-500/10 rounded-full border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                    <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                    </span>
+                    <span className="text-xs font-bold text-indigo-300 tracking-wide uppercase">
+                        {isResuming ? 'Resumed' : 'Live Interview'}
+                    </span>
                 </div>
             </header>
 
-            <main className="flex-1 p-6 overflow-y-auto">
-                <div className="space-y-8 max-w-4xl mx-auto w-full">
+            {/* --- UX: Chat Area --- */}
+            <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent pt-24 pb-32 px-4 sm:px-6">
+                <div className="max-w-3xl mx-auto space-y-6">
+                    
+                    {/* Welcome/Date divider for context */}
+                    <div className="flex justify-center">
+                        <span className="text-xs font-medium text-slate-500 bg-white/5 px-3 py-1 rounded-full">
+                            {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                        </span>
+                    </div>
+
                     {history.map((msg, index) => (
                         <div key={index} className={`flex gap-4 animate-fade-in-up ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            
+                            {/* AI Avatar */}
                             {msg.role === 'model' && <EvaAvatar />}
-                            <div className={`max-w-xl lg:max-w-2xl p-4 rounded-xl shadow-md ${msg.role === 'user' ? 'bg-indigo-600 rounded-br-none' : 'bg-slate-700 rounded-bl-none'}`}>
-                                <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                            
+                            {/* Message Bubble */}
+                            <div className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl shadow-md text-[15px] leading-relaxed relative group
+                                ${msg.role === 'user' 
+                                    ? 'bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-br-none' 
+                                    : 'bg-[#1E212B] text-slate-200 border border-white/5 rounded-bl-none'
+                                }`}>
+                                <p className="whitespace-pre-wrap">{msg.text}</p>
+                                {/* Timestamp on hover */}
+                                <div className={`absolute bottom-1 text-[10px] opacity-0 group-hover:opacity-60 transition-opacity ${msg.role === 'user' ? 'left-2 text-indigo-100' : 'right-2 text-slate-400'}`}>
+                                    Just now
+                                </div>
                             </div>
                         </div>
                     ))}
-                    {isLoading && history.length > 0 && (
+
+                    {/* AI Typing Indicator */}
+                    {isLoading && (
                          <div className="flex gap-4 justify-start animate-fade-in-up">
                             <EvaAvatar />
-                            <div className="p-4 rounded-xl bg-slate-700 rounded-bl-none flex items-center">
-                                <div className="animate-pulse flex space-x-1.5">
-                                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>
-                                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animation-delay-200"></div>
-                                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animation-delay-400"></div>
-                                </div>
+                            <div className="p-3 rounded-2xl bg-[#1E212B] border border-white/5 rounded-bl-none flex items-center">
+                                <TypingIndicator />
                             </div>
                         </div>
                     )}
@@ -151,15 +241,43 @@ const AIInterviewPage = () => {
                 </div>
             </main>
             
-             <footer className="p-4 border-t border-slate-700 flex-shrink-0">
-                <div className="flex items-center gap-4 max-w-3xl mx-auto">
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} className="flex-1 w-full p-3 rounded-lg bg-slate-800 border border-slate-600 resize-none focus:ring-2 focus:ring-indigo-500" placeholder={isListening ? "Listening... Speak now." : "Your transcribed answer..."} rows="2" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(text); } }}/>
-                    {hasRecognitionSupport ? (
-                        <button onClick={isListening ? stopListening : startListening} className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
-                            {isListening ? <StopIcon /> : <MicIcon />}
+            {/* --- UX: Floating Input Bar --- */}
+            <footer className="absolute bottom-0 w-full z-20 p-4 sm:p-6 bg-gradient-to-t from-[#0F1117] via-[#0F1117] to-transparent">
+                <div className="max-w-3xl mx-auto relative bg-[#1E212B]/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-2 flex items-end gap-2">
+                    
+                    {/* Text Area */}
+                    <textarea 
+                        value={text} 
+                        onChange={(e) => setText(e.target.value)} 
+                        className="flex-1 bg-transparent border-0 text-white placeholder-slate-500 focus:ring-0 resize-none py-3 px-4 max-h-32 min-h-[52px]" 
+                        placeholder={isListening ? "Listening... Speak now." : "Type your answer..."} 
+                        rows="1"
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(text); } }}
+                    />
+
+                    {/* Mic Button */}
+                    {hasRecognitionSupport && (
+                        <button 
+                            onClick={isListening ? stopListening : startListening} 
+                            className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
+                                isListening 
+                                    ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 ring-1 ring-red-500/50' 
+                                    : 'hover:bg-white/5 text-slate-400 hover:text-indigo-400'
+                            }`}
+                            title="Toggle Voice Input"
+                        >
+                            {isListening ? <MicIcon active={true} /> : <MicIcon active={false} />}
                         </button>
-                    ) : <p className="text-sm text-red-400">Voice not supported.</p>}
-                    <button onClick={() => handleSend(text)} disabled={isLoading || isListening || !text.trim()} className="px-5 py-4 bg-green-600 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-500"><SendIcon/></button>
+                    )}
+                    
+                    {/* Send Button */}
+                    <button 
+                        onClick={() => handleSend(text)} 
+                        disabled={isLoading || isListening || !text.trim()} 
+                        className="p-3 bg-indigo-600 rounded-xl text-white shadow-lg hover:bg-indigo-500 hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex-shrink-0"
+                    >
+                        <SendIcon/>
+                    </button>
                 </div>
             </footer>
         </div>

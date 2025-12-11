@@ -3,7 +3,7 @@
 import express from 'express';
 import userAuth from '../middleware/userAuth.js';
 // Naya function import karein
-import { startInterviewSession, postChatMessage, getInterviewHistory,getInterviewReport } from '../controllers/interviewController.js';
+import { startInterviewSession, postChatMessage, getInterviewHistory,getInterviewReport, deleteInterviewSession} from '../controllers/interviewController.js';
 
 const router = express.Router();
 router.use(userAuth);
@@ -18,5 +18,7 @@ router.post('/start', startInterviewSession);
 router.post('/chat/:sessionId', postChatMessage);
 
 router.get('/:sessionId', getInterviewReport);
+
+router.delete('/delete/:sessionId', deleteInterviewSession);
 
 export default router;

@@ -186,3 +186,30 @@ export const getInterviewReport = async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to fetch interview report." });
   }
 };
+
+export const deleteInterviewSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    // 1. Session dhundo
+    const session = await InterviewSession.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: "Interview session not found." });
+    }
+
+    // 2. Security Check: Kya delete karne wala wahi user hai jiska interview hai?
+    if (session.user.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Unauthorized action." });
+    }
+
+    // 3. Delete karo
+    await InterviewSession.findByIdAndDelete(sessionId);
+
+    return res.status(200).json({ success: true, message: "Session deleted successfully." });
+
+  } catch (error) {
+    console.error("❌ Error in deleteInterviewSession:", error);
+    return res.status(500).json({ success: false, message: "Failed to delete session." });
+  }
+};
