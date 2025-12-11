@@ -19,6 +19,7 @@ import messageRoutes from "./routes/messageRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import interviewRoutes from './routes/interviewRoutes.js';
+import resumeRouter from './routes/resumeRoutes.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -51,7 +52,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/users", userRouter);
 app.use('/api/interviews', interviewRoutes);
-
+app.use('/api/resume', resumeRouter);
 server.listen(port, () =>
   console.log(`Server (with Socket.IO) started on PORT:${port}`)
 );

@@ -6,12 +6,22 @@
 
 body {
     background-color: #0c0c0f; /* Dark background color */
-    color: white; /* Default text color ko white kar do */
+    color: white; /* Default text color for the Dark Theme */
+    font-family: "Outfit", sans-serif; /* Font yahi set kar diya taaki * selector ki zarurat na pade */
 }
 
-*{
-    font-family: "Outfit", sans-serif;
+/* --- 🛠️ FIX FOR INVISIBLE TEXT --- */
+/* Yeh rule ensure karega ki jab bhi koi Input box use ho, 
+   uska text BLACK ho, bhale hi body ka text WHITE kyu na ho */
+   
+@layer base {
+  input, textarea, select {
+    color: #0f172a; /* Slate-900 (Dark Black) */
+    background-color: #ffffff; /* White Background default */
+  }
 }
+
+/* Utilities */
 .split-word, .split-char {
   visibility: visible !important;
 }

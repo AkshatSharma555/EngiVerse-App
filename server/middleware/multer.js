@@ -1,5 +1,3 @@
-// Filename: server/middleware/multer.js (CORRECTED)
-
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
@@ -10,7 +8,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 1. Storage for PROFILE PICTURES (no change)
+// 1. Storage for PROFILE PICTURES (EngiVerse)
 const profilePictureStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -20,16 +18,20 @@ const profilePictureStorage = new CloudinaryStorage({
   },
 });
 
-// 2. Storage for CHAT FILES (updated)
+// 2. Storage for CHAT FILES (EngiVerse)
 const chatFileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'EngiVerse/chat_files',
-    // --- THIS IS THE FIX ---
-    // 'auto' tells Cloudinary to automatically detect if it's an image, video, or raw file (like PDF)
     resource_type: 'auto', 
   },
 });
 
+// 3. Storage for RESUME IMAGE (New Addition)
+// Hum yahan 'diskStorage' use karenge kyunki resumeController ImageKit use karta hai
+// aur use 'fs' (file system) path ki zaroorat hoti hai.
+const resumeStorage = multer.diskStorage({}); 
+
 export const uploadProfilePicture = multer({ storage: profilePictureStorage });
 export const uploadChatFile = multer({ storage: chatFileStorage });
+export const uploadResumeImage = multer({ storage: resumeStorage }); // <-- Ye naya export hai

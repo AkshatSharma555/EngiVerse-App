@@ -1,5 +1,3 @@
-// Filename: client/src/App.jsx (FINAL STRUCTURED VERSION)
-
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -9,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import CommunityLayout from "./components/ui/CommunityLayout";
 
 // Page Imports
+
 import Home from "./pages/home.jsx";
 import Login from "./pages/Login.jsx";
 import EmailVerify from "./pages/EmailVerify.jsx";
@@ -28,6 +27,10 @@ import Explore from './pages/Explore.jsx';
 import AIInterviewDashboard from "./pages/AIInterviewDashboard.jsx";
 import AIInterviewPage from "./pages/AIInterviewPage.jsx";
 import InterviewReport from './pages/InterviewReport.jsx';
+import ResumeDashboard from "./pages/ResumeDashboard.jsx";
+
+// --- NEW IMPORT ---
+import ResumeBuilder from "./pages/ResumeBuilder.jsx"; 
 
 // Component Imports
 import ProtectedRoute from "./components/ui/ProtectedRoute.jsx";
@@ -49,6 +52,11 @@ const App = () => {
             
             {/* Routes that DON'T use the community layout */}
             <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* --- NEW RESUME ROUTE --- */}
+            <Route path="/resume/builder/:resumeId" element={<ResumeBuilder />} /> 
+            <Route path="/resume-dashboard" element={<ResumeDashboard />} />
+
             <Route path="/ai-interviewer" element={<AIInterviewDashboard />} />
             <Route path="/practice-interviews" element={<AIInterviewPage />} />
             <Route path="/interviews/report/:sessionId" element={<InterviewReport />} />

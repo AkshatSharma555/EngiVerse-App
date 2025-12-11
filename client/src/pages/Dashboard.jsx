@@ -1,16 +1,14 @@
-// Filename: client/src/pages/Dashboard.jsx (Updated)
-
 import React, { useEffect, useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; 
 import Navbar from "../components/ui/Navbar";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify"; // Not needed here anymore
 import { InterviewIcon, JobsIcon, P2PIcon } from "../components/ui/DashboardIcons";
+import { FileText, PlusCircle } from "lucide-react"; 
 
 // --- HELPER COMPONENT: Circular Progress Bar ---
 const CircularProgressBar = ({ percentage, size = 80 }) => {
-    // ... (This component remains unchanged)
     const strokeWidth = 10;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * Math.PI * 2;
@@ -30,7 +28,7 @@ const CircularProgressBar = ({ percentage, size = 80 }) => {
 
 const Dashboard = () => {
     const { backendUrl, user } = useContext(AppContent);
-    const [dashboardData, setDashboardData] = useState({ profileCompletion: 0, openTaskCount: 0 }); // Default data updated
+    const [dashboardData, setDashboardData] = useState({ profileCompletion: 0, openTaskCount: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -41,7 +39,6 @@ const Dashboard = () => {
                     setDashboardData(response.data.data);
                 }
             } catch (error) {
-                toast.error("Failed to load dashboard data.");
                 console.error("Dashboard fetch error:", error);
             } finally {
                 setLoading(false);
@@ -78,7 +75,8 @@ const Dashboard = () => {
 
                     {/* --- Primary Column (Launchpad) --- */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* --- THIS CARD IS NOW A SIMPLE LINK --- */}
+                        
+                        {/* Card 1: Interviews */}
                         <Link to="/ai-interviewer" className="group block p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                            <div className="flex items-center gap-5">
                                <div className="bg-white/20 p-4 rounded-xl shadow-inner"><InterviewIcon /></div>
@@ -90,9 +88,8 @@ const Dashboard = () => {
                            </div>
                         </Link>
 
-                        {/* Card 2: Job Aggregator */}
+                        {/* Card 2: Jobs */}
                         <Link to="/jobs" className="group block p-6 bg-gradient-to-br from-sky-400 to-cyan-500 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-                           {/* ... (no changes here) ... */}
                             <div className="flex items-center gap-5">
                                <div className="bg-white/20 p-4 rounded-xl shadow-inner"><JobsIcon /></div>
                                <div>
@@ -103,8 +100,7 @@ const Dashboard = () => {
                            </div>
                         </Link>
 
-                        {/* === CHANGE IS HERE === */}
-                        {/* Card 3: P2P Skill Exchange */}
+                        {/* Card 3: Collaboration */}
                         <Link to="/skill-exchange" className="group block p-6 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                              <div className="flex items-center gap-5">
                                 <div className="bg-white/20 p-4 rounded-xl shadow-inner"><P2PIcon /></div>
@@ -112,7 +108,6 @@ const Dashboard = () => {
                                     <h2 className="text-xl font-bold">Collaborate with Peers</h2>
                                     <p className="text-sm opacity-80 mt-1">Get help on projects or offer your skills</p>
                                 </div>
-                                {/* Live Task Count Badge */}
                                 {dashboardData.openTaskCount > 0 && (
                                     <div className="flex-shrink-0 bg-white/25 text-white text-sm font-bold px-4 py-2 rounded-full shadow-inner">
                                         {dashboardData.openTaskCount} Open Task{dashboardData.openTaskCount > 1 ? 's' : ''}
@@ -121,9 +116,32 @@ const Dashboard = () => {
                                 <span className="ml-2 text-2xl font-semibold transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
                             </div>
                         </Link>
+
+                        {/* --- CARD 4: AI RESUME BUILDER (Updated Link) --- */}
+                        <Link 
+                            to="/resume-dashboard"
+                            className="group block p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg text-white transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                        >
+                            <div className="flex items-center gap-5">
+                                <div className="bg-white/20 p-4 rounded-xl shadow-inner">
+                                    <FileText size={32} />
+                                </div>
+                                <div className="flex-grow">
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-xl font-bold">AI Resume Builder</h2>
+                                        <span className="bg-white/20 text-xs px-2 py-0.5 rounded text-white font-medium border border-white/20">NEW</span>
+                                    </div>
+                                    <p className="text-sm opacity-90 mt-1">Manage resumes & use AI tools</p>
+                                </div>
+                                <div className="bg-white/20 p-2 rounded-full transition-transform duration-300 group-hover:scale-110">
+                                    <PlusCircle size={24} />
+                                </div>
+                            </div>
+                        </Link>
+
                     </div>
 
-                    {/* --- Secondary Column (Profile Widget & More) --- */}
+                    {/* --- Secondary Column (Profile Widget) --- */}
                     <div className="lg:col-span-1 space-y-8">
                         <div className="p-6 bg-white rounded-2xl shadow-lg border border-slate-200/80 text-center">
                             <h3 className="text-lg font-bold text-slate-800">Profile Completion</h3>
