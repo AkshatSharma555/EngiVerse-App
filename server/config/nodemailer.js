@@ -1,15 +1,11 @@
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com', 
-    port: process.env.SMTP_PORT || 587,
-    secure: false, 
+    host: 'smtp-relay.brevo.com',
+    port: 587,
     auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS, 
-    },
-    tls: {
-        rejectUnauthorized: false 
+        pass: process.env.SMTP_PASS,
     }
 });
 
