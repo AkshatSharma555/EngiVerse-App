@@ -1,6 +1,3 @@
-// Filename: client/src/pages/EmailVerify.jsx
-// (Updated by your AI assistant to fix errors while keeping your UI)
-
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -9,41 +6,29 @@ import { assets } from '../assets/assets';
 import { AppContent } from '../context/AppContext';
 
 const EmailVerify = () => {
-    // FIX 1: Humne context se naye, correct variables liye hain
-    const { backendUrl, user, checkUserStatus } = useContext(AppContent);
+    axios.defaults.withCredentials = true;
+    const { backendUrl, isLoggedin, userData, getUserData } = useContext(AppContent);
     const navigate = useNavigate();
-    
-    // FIX 2: OTP ko store karne ke liye React state banayi hai
+
     const [otp, setOtp] = useState(new Array(6).fill(""));
+    
+    // Yaha humne loading state banayi hai request rokne ke liye
     const [loading, setLoading] = useState(false);
 
     const inputRefs = useRef([]);
 
-    // Page load hote hi pehle input par focus
+    // Auto-focus on first input
     useEffect(() => {
         if (inputRefs.current[0]) {
             inputRefs.current[0].focus();
         }
     }, []);
 
-    // FIX 3: useEffect ko naye 'user' object ke saath update kiya hai
-    useEffect(() => {
-        // Agar user pehle se verified hai, toh usse dashboard par bhej do
-        if (user && user.isAccountVerified) {
-            navigate('/dashboard');
-        }
-    }, [user, navigate]);
-
-    // FIX 4: Handlers ko update kiya hai taaki woh 'otp' state ka use karein
     const handleChange = (element, index) => {
-        if (isNaN(element.value)) return; // Sirf numbers allow karo
-        
-        // State update karo
+        if (isNaN(element.value)) return;
         const newOtp = [...otp];
         newOtp[index] = element.value;
         setOtp(newOtp);
-
-        // Agle input par focus karo
         if (element.value !== "" && index < 5) {
             inputRefs.current[index + 1].focus();
         }
@@ -56,42 +41,54 @@ const EmailVerify = () => {
     };
 
     const handlePaste = (e) => {
+        e.preventDefault(); // Default paste behavior roko
         const paste = e.clipboardData.getData('text');
         if (paste.length === 6 && !isNaN(paste)) {
             setOtp(paste.split(''));
-            inputRefs.current[5].focus(); // Aakhri input par focus karo
+            inputRefs.current[5].focus();
         }
     };
 
-    // FIX 5: onSubmitHandler ko update kiya hai
     const onSubmitHandler = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const finalOtp = otp.join('');
+        e.preventDefault(); // Page reload roko
 
+        // --- FIX 1: DOUBLE CLICK PROTECTION ---
+        // Agar loading chal raha hai, toh click ignore karo
+        if (loading) return; 
+
+        const finalOtp = otp.join('');
         if (finalOtp.length !== 6) {
             toast.error("Please enter a valid 6-digit OTP.");
-            setLoading(false);
             return;
         }
 
         try {
+            setLoading(true); // Button lock kar do
+
             const { data } = await axios.post(backendUrl + '/api/auth/verify-account', { otp: finalOtp });
+
             if (data.success) {
                 toast.success(data.message);
-                await checkUserStatus(); // User state ko refresh karo
-                navigate('/dashboard'); // Dashboard par bhej do
+                
+                // Context update try karo, par agar fail ho toh bhi dashboard bhejo
+                try {
+                    await getUserData();
+                } catch (err) {
+                    console.log("Context update skipped");
+                }
+                
+                // --- FIX 2: FORCE NAVIGATION ---
+                navigate('/dashboard'); 
             } else {
                 toast.error(data.message);
+                setLoading(false); // Sirf error aane par button unlock karo
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Verification failed.");
-        } finally {
             setLoading(false);
         }
     };
-    
-    // Aapka UI/JSX bilkul same hai, bas input mein 'value' prop add kiya hai
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-200 to-purple-400">
             <img
@@ -117,16 +114,18 @@ const EmailVerify = () => {
                             required
                             className='w-12 h-12 bg-[#333A5C] text-white text-center text-xl rounded-md'
                             ref={el => inputRefs.current[index] = el}
-                            value={value} // FIX 6: Input ko state se connect kiya hai
+                            value={value}
                             onChange={(e) => handleChange(e.target, index)}
                             onKeyDown={(e) => handleKeyDown(e, index)}
                         />
                     ))}
                 </div>
+                
+                {/* Button disable ho jayega jab loading true hoga */}
                 <button 
-                    type="submit"
+                    type="submit" 
                     disabled={loading}
-                    className='w-full py-3 bg-gradient-to-r from-indigo-500 to-indigo-900 text-white rounded-full disabled:bg-indigo-400 disabled:cursor-not-allowed'
+                    className={`w-full py-3 rounded-full text-white ${loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-500 to-indigo-900 hover:scale-105 transition-all'}`}
                 >
                     {loading ? "Verifying..." : "Verify email"}
                 </button>

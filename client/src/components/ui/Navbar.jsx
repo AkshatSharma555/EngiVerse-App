@@ -1,5 +1,3 @@
-// Filename: client/src/components/ui/Navbar.jsx (FINAL CORRECTED VERSION)
-
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { assets } from "../../assets/assets";
@@ -41,6 +39,9 @@ const Navbar = ({ theme = "light" }) => {
     useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // --- FIX 1: Add Loading State for OTP Button ---
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
 
   const profileDropdownRef = useRef(null);
   const notificationDropdownRef = useRef(null);
@@ -50,13 +51,10 @@ const Navbar = ({ theme = "light" }) => {
     ? "bg-white/5 backdrop-blur-lg border-b border-white/20"
     : "bg-white shadow-sm";
 
-  // --- THIS IS THE FIX ---
-  // These variables were missing and are needed for the Login button's styling.
   const buttonClasses = isTransparent
     ? "border-white/50 text-white hover:bg-white/20"
     : "border-gray-400 text-gray-800 hover:bg-gray-100";
   const arrowIconClass = isTransparent ? "w-4 invert" : "w-4";
-  // --- END OF FIX ---
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -96,7 +94,6 @@ const Navbar = ({ theme = "light" }) => {
   useEffect(() => {
     if (socket) {
       socket.on("newNotification", (newNotification) => {
-        // --- Custom notification messages based on type ---
         switch (newNotification.type) {
           case "badge_awarded":
             toast.success(`🏆 You've earned a new badge!`);
@@ -117,7 +114,7 @@ const Navbar = ({ theme = "light" }) => {
       return () => socket.off("newNotification");
     }
   }, [socket]);
-  // --- Helper function for notification dropdown text ---
+
   function renderNotificationText(notif) {
     const senderName = (
       <span className="font-bold">{notif.sender?.name || "Someone"}</span>
@@ -161,19 +158,32 @@ const Navbar = ({ theme = "light" }) => {
     setIsProfileDropdownOpen(false);
   };
 
+  // --- FIX 2: Protected OTP Sending Function ---
   const sendVerificationOtp = async () => {
+    // Agar pehle se bhej raha hai, toh click ignore karo
+    if (isSendingOtp) return; 
+
     try {
+      setIsSendingOtp(true); // LOCK 🔒
+      
       const { data } = await axios.post(
         backendUrl + "/api/auth/send-verify-otp"
       );
+      
       if (data.success) {
         navigate("/email-verify");
         toast.success(data.message);
-      } else toast.error(data.message);
+        setIsProfileDropdownOpen(false);
+        // Note: Navigate ho gaya toh state reset ki zarurat nahi, 
+        // par agar page yahi rehta hai toh niche reset logic hai.
+      } else {
+        toast.error(data.message);
+        setIsSendingOtp(false); // UNLOCK only on error 🔓
+      }
     } catch (error) {
       toast.error(error.message);
+      setIsSendingOtp(false); // UNLOCK only on error 🔓
     }
-    setIsProfileDropdownOpen(false);
   };
 
   return (
@@ -189,12 +199,11 @@ const Navbar = ({ theme = "light" }) => {
       </Link>
       {user ? (
         <div className="flex items-center gap-5">
-          {/* --- NEW: EngiCoin Balance Display --- */}
           <div className="flex items-center gap-2 bg-yellow-50 text-yellow-800 font-bold px-3 py-1.5 rounded-full">
             <CoinIcon />
             <span>{user?.engiCoins ?? 0}</span>
           </div>
-          {/* Notification UI */}
+          
           <div className="relative" ref={notificationDropdownRef}>
             <button
               onClick={handleBellClick}
@@ -230,7 +239,6 @@ const Navbar = ({ theme = "light" }) => {
                         onClick={() => setIsNotificationDropdownOpen(false)}
                         className="block p-3 hover:bg-gray-50 border-b"
                       >
-                        {/* Use helper for notification message */}
                         <p className="text-sm text-gray-700">
                           {renderNotificationText(notif)}
                         </p>
@@ -298,9 +306,11 @@ const Navbar = ({ theme = "light" }) => {
                 {!user.isAccountVerified && (
                   <li
                     onClick={sendVerificationOtp}
-                    className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                    // --- FIX 3: Visual Feedback for Disabled State ---
+                    className={`py-2 px-4 hover:bg-gray-100 cursor-pointer ${isSendingOtp ? 'opacity-50 cursor-wait' : ''}`}
                   >
-                    Verify Email
+                   {/* Text change ho jayega jab bhej raha hoga */}
+                   {isSendingOtp ? "Sending OTP..." : "Verify Email"}
                   </li>
                 )}
                 <li

@@ -113,27 +113,47 @@ export const sendVerifyOtp = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   try {
     const { otp } = req.body;
+
+    // Check 1: Kya OTP frontend se aaya hai?
     if (!otp) {
-      return res.status(400).json({ success: false, message: "Missing OTP" });
+      return res.json({ success: false, message: "OTP is missing" });
     }
+
+    // Check 2: User ko dhundo aur hidden fields (+verifyOtp) ko bhi saath lao
     const user = await userModel.findById(req.user.id).select('+verifyOtp +verifyOtpExpireAt');
+
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.json({ success: false, message: "User not found" });
     }
-    if (user.verifyOtp !== otp) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+
+    // Check 3: (Race Condition Fix) Agar user pehle se verify hai, toh Success return karo
+    if (user.isAccountVerified) {
+      return res.json({ success: true, message: "Email already verified" });
     }
+
+    // Check 4: (Type Mismatch Fix) Dono ko String bana ke match karo
+    // Taaki '123456' (Number) aur "123456" (String) match ho jayein
+    if (String(user.verifyOtp) !== String(otp)) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+
+    // Check 5: Expiry Check
     if (user.verifyOtpExpireAt < Date.now()) {
-      return res.status(400).json({ success: false, message: "OTP has expired" });
+      return res.json({ success: false, message: "OTP has expired" });
     }
+
+    // --- SUCCESS: Database Update ---
     user.isAccountVerified = true;
-    user.verifyOtp = undefined;
-    user.verifyOtpExpireAt = undefined;
+    user.verifyOtp = '';         // OTP clear kar do
+    user.verifyOtpExpireAt = 0;  // Timer clear kar do
+    
     await user.save();
-    return res.status(200).json({ success: true, message: "Email verified successfully" });
+
+    return res.json({ success: true, message: "Email verified successfully" });
+
   } catch (error) {
-    console.error("Email Verification Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
+    console.error("Verification Error:", error);
+    return res.json({ success: false, message: "Server error during verification" });
   }
 };
 
